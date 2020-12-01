@@ -1,8 +1,5 @@
 package com.example.recipeapp;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
@@ -12,11 +9,14 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.example.recipeapp.Helpers.FirebaseHelper;
-import com.example.recipeapp.UserEntity;
+import com.example.recipeapp.Helpers.StorageHelper;
+import com.example.recipeapp.Models.UserEntity;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -87,15 +87,26 @@ public class LogInActivity extends AppCompatActivity {
         firebaseAuth.signInWithEmailAndPassword(email, password).addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()) {
-                            Toast.makeText(LogInActivity.this,"Loged in ",Toast.LENGTH_SHORT).show();
-                            login();
-                        } else {
+                        if (task.isSuccessful()){
+                            FirebaseUser user = firebaseAuth.getCurrentUser();
+                            FirebaseHelper.usersDatabase.child(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    UserEntity userEntity = snapshot.getValue(UserEntity.class);
+                                    StorageHelper.getInstance().setUserEntity(userEntity);
+                                    startActivity(new Intent(LogInActivity.this, HomeScreen.class));
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {
+
+                                }
+                            });
+                        }
+                        else {
                             Toast.makeText(LogInActivity.this, "Login failed", Toast.LENGTH_SHORT).show();
                         }
                     }
                 }
-        );
-    }
-
+        );}
 }
